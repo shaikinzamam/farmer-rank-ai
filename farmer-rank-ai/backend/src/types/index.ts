@@ -5,6 +5,8 @@ export interface FarmerProfile {
   location: string;
   latitude?: number;
   longitude?: number;
+  phoneNumber?: string;
+  whatsappNumber?: string;
   quantityKg: number;
   pricePerKg: number;
   qualityGrade: "A" | "B" | "C";

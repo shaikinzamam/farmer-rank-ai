@@ -97,13 +97,26 @@ function round(n: number): number {
  * math directly from ScoreBreakdown, which the Explanation Agent then
  * narrates in natural language).
  */
-export async function runRankingAgent(candidates: RetrievedCandidate[], intent: ParsedIntent): Promise<RankedFarmer[]> {
+export async function runRankingAgent(
+  candidates: RetrievedCandidate[],
+  intent: ParsedIntent,
+  memoryBoostFarmerIds: string[] = []
+): Promise<RankedFarmer[]> {
+  const memoryBoostSet = new Set(memoryBoostFarmerIds);
   const scored = candidates.map((c) => ({
     farmer: c.farmer,
-    scoreBreakdown: computeScoreBreakdown(c, intent),
+    scoreBreakdown: applyMemoryBoost(computeScoreBreakdown(c, intent), memoryBoostSet.has(c.farmer.id)),
   }));
 
   scored.sort((a, b) => b.scoreBreakdown.weightedTotal - a.scoreBreakdown.weightedTotal);
 
   return scored.map((s, idx) => ({ ...s, rank: idx + 1 }));
+}
+
+function applyMemoryBoost(scoreBreakdown: ScoreBreakdown, shouldBoost: boolean): ScoreBreakdown {
+  if (!shouldBoost) return scoreBreakdown;
+  return {
+    ...scoreBreakdown,
+    weightedTotal: round(Math.min(100, scoreBreakdown.weightedTotal + 3)),
+  };
 }

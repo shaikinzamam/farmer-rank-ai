@@ -24,6 +24,8 @@ export interface FarmerProfileInput {
   location: string;
   latitude?: number;
   longitude?: number;
+  phoneNumber?: string;
+  whatsappNumber?: string;
   quantityKg: number;
   pricePerKg: number;
   qualityGrade: "A" | "B" | "C";
@@ -48,6 +50,8 @@ export async function runFarmerProfileAgent(input: FarmerProfileInput): Promise<
     location: input.location,
     latitude: input.latitude,
     longitude: input.longitude,
+    phoneNumber: input.phoneNumber,
+    whatsappNumber: input.whatsappNumber,
     quantityKg: input.quantityKg,
     pricePerKg: input.pricePerKg,
     qualityGrade: input.qualityGrade,

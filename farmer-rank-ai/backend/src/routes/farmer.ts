@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { runFarmerProfileAgent } from "../mastra/agents/farmerProfileAgent";
 import { recordFeedback } from "../db/postgres";
+import { checkText } from "../safety/enkrypt";
 
 export const farmerRouter = Router();
 
@@ -11,6 +12,8 @@ const FarmerProfileSchema = z.object({
   location: z.string().min(2),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  phoneNumber: z.string().min(6).optional(),
+  whatsappNumber: z.string().min(6).optional(),
   quantityKg: z.number().positive(),
   pricePerKg: z.number().positive(),
   qualityGrade: z.enum(["A", "B", "C"]),
@@ -55,6 +58,16 @@ farmerRouter.post("/farmer/feedback", async (req, res) => {
   }
 
   try {
+    if (parsed.data.comment) {
+      const safety = await checkText(parsed.data.comment, "input");
+      if (!safety.passed) {
+        return res.status(422).json({
+          error: "Feedback comment failed the safety guardrail check.",
+          flags: safety.flags,
+        });
+      }
+    }
+
     await recordFeedback({ ...parsed.data, createdAt: new Date().toISOString() });
     return res.status(200).json({ ok: true });
   } catch (err) {

@@ -6,6 +6,7 @@ import { explanationAgent } from "./agents/explanationAgent";
 import { safetyAgent } from "./agents/safetyAgent";
 import { memoryAgent } from "./agents/memoryAgent";
 import { farmerProfileAgent } from "./agents/farmerProfileAgent";
+import { queryWorkflow } from "./workflows/queryWorkflow";
 
 /**
  * Central Mastra registry. Registering every agent here (rather than only
@@ -22,6 +23,9 @@ export const mastra = new Mastra({
     safetyAgent,
     memoryAgent,
     farmerProfileAgent,
+  },
+  workflows: {
+    queryWorkflow,
   },
 });
 

@@ -10,10 +10,9 @@ import { cacheGet, cacheKeyForQuery, cacheSet } from "../db/cache";
 import { QueryPipelineResult } from "../types";
 
 /**
- * This function IS the Mastra workflow: Intent -> Memory(recall) -> Retrieval
- * -> Ranking -> Explanation -> Safety -> Memory(persist). Each stage is a
- * distinct Mastra Agent (see ./agents/*) so orchestration depth is visible
- * both in code structure and in the audit trail written for every request.
+ * Express-facing query pipeline wrapper. The real Mastra workflow is registered
+ * separately in ./workflows/queryWorkflow.ts; this wrapper preserves API-level
+ * behavior for cache lookups, traceId/latency fields, and audit logging.
  *
  * Maps directly onto the five required capabilities:
  *   Think    -> Intent Agent (parses the buyer's natural language requirement)
@@ -54,7 +53,7 @@ export async function runQueryPipeline(rawQuery: string, actor = "buyer"): Promi
   });
 
   // 4. Evaluate
-  let ranked = await runRankingAgent(candidates, intent);
+  let ranked = await runRankingAgent(candidates, intent, memoryContext.topFarmerIds);
   ranked = ranked.slice(0, 10); // top 10 for the buyer
 
   // 5. Act (explain)

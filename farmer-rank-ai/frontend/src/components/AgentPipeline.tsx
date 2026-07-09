@@ -3,21 +3,31 @@
 import { useEffect, useState } from "react";
 
 export const PIPELINE_STAGES = [
-  { key: "intent", label: "Intent Agent", verb: "Think", detail: "parsing your query into a structured requirement" },
-  { key: "memory-recall", label: "Memory Agent", verb: "Remember", detail: "recalling similar past buyer matches from Qdrant" },
-  { key: "retrieval", label: "Retrieval Agent", verb: "Retrieve", detail: "semantic search over farmer_listings in Qdrant" },
-  { key: "ranking", label: "Ranking Agent", verb: "Evaluate", detail: "applying the fixed 6-factor weighted formula" },
-  { key: "explanation", label: "Explanation Agent", verb: "Act", detail: "writing a grounded justification per rank" },
-  { key: "safety", label: "Safety Agent", verb: "Guard", detail: "Enkrypt AI check for bias, hallucination, financial claims" },
+  { key: "intent", label: "Intent Agent", verb: "Think", detail: "structured requirement parsing" },
+  { key: "memory-recall", label: "Memory Agent", verb: "Remember", detail: "similar historical matches" },
+  { key: "retrieval", label: "Qdrant Retrieval", verb: "Retrieve", detail: "semantic farmer search" },
+  { key: "ranking", label: "Ranking Agent", verb: "Evaluate", detail: "six-factor scoring" },
+  { key: "explanation", label: "Explanation Agent", verb: "Act", detail: "grounded justification" },
+  { key: "safety", label: "Safety Guard", verb: "Safety", detail: "Enkrypt/local guardrail" },
 ] as const;
 
-/**
- * Steps through the pipeline stages on a timer while `active` is true, so a
- * buyer visibly watches each Mastra agent hand off to the next — instead of
- * staring at a generic spinner for ~1-2s. Purely a presentation timer; it
- * doesn't need real per-stage timestamps from the backend to be honest,
- * since every stage genuinely does run in this order for every request.
- */
+export function PipelineStrip({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className={["grid gap-2", compact ? "grid-cols-2 md:grid-cols-6" : "grid-cols-1 sm:grid-cols-3 lg:grid-cols-6"].join(" ")}>
+      {PIPELINE_STAGES.map((stage, index) => (
+        <div key={stage.key} className="relative rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-3">
+          <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-ledger">{stage.verb}</div>
+          <div className="mt-1 text-sm font-medium text-paper">{stage.label}</div>
+          {!compact && <div className="mt-1 text-xs text-mute">{stage.detail}</div>}
+          {index < PIPELINE_STAGES.length - 1 && (
+            <div className="hidden lg:block absolute -right-2 top-1/2 h-px w-2 bg-ledger/40" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AgentPipeline({ active, done }: { active: boolean; done: boolean }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -27,7 +37,7 @@ export function AgentPipeline({ active, done }: { active: boolean; done: boolean
       return;
     }
     const interval = setInterval(() => {
-      setCurrentIndex((i) => (i < PIPELINE_STAGES.length - 1 ? i + 1 : i));
+      setCurrentIndex((index) => (index < PIPELINE_STAGES.length - 1 ? index + 1 : index));
     }, 380);
     return () => clearInterval(interval);
   }, [active]);
@@ -35,31 +45,37 @@ export function AgentPipeline({ active, done }: { active: boolean; done: boolean
   if (!active && !done) return null;
 
   return (
-    <div className="border border-hairline rounded-sm bg-surface p-5">
-      <p className="font-mono text-xs text-wheatSoft mb-4">
-        {done ? "pipeline complete" : "running agent pipeline…"}
-      </p>
-      <div className="flex flex-col gap-3">
-        {PIPELINE_STAGES.map((stage, idx) => {
-          const isComplete = done || idx < currentIndex;
-          const isCurrent = !done && idx === currentIndex;
+    <div className="glass-panel rounded-[28px] p-5 soft-glow">
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <p className="font-mono text-xs uppercase tracking-[0.25em] text-wheatSoft">
+          {done ? "pipeline complete" : "running agent pipeline"}
+        </p>
+        <span className="rounded-full border border-ledger/25 bg-ledger/10 px-3 py-1 text-xs font-mono text-ledger">
+          {done ? "ready" : "live"}
+        </span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+        {PIPELINE_STAGES.map((stage, index) => {
+          const isComplete = done || index < currentIndex;
+          const isCurrent = !done && index === currentIndex;
           return (
-            <div key={stage.key} className="flex items-center gap-3">
-              <div
-                className={[
-                  "w-2 h-2 rounded-full shrink-0 transition-colors duration-300",
-                  isComplete ? "bg-ledger" : isCurrent ? "bg-wheat animate-pulse" : "bg-hairline",
-                ].join(" ")}
-              />
-              <span className="font-mono text-[10px] uppercase tracking-wider text-wheatSoft w-16 shrink-0">
-                {stage.verb}
-              </span>
-              <span className={["text-sm shrink-0", isComplete || isCurrent ? "text-paper" : "text-mute"].join(" ")}>
-                {stage.label}
-              </span>
-              <span className="text-xs text-mute truncate hidden sm:inline">— {stage.detail}</span>
-              {isComplete && <span className="ml-auto text-ledger text-xs font-mono shrink-0">done</span>}
-              {isCurrent && <span className="ml-auto text-wheat text-xs font-mono shrink-0">running</span>}
+            <div
+              key={stage.key}
+              className={[
+                "rounded-2xl border px-3 py-3 transition-colors",
+                isComplete
+                  ? "border-ledger/30 bg-ledger/10"
+                  : isCurrent
+                    ? "border-wheat/40 bg-wheat/10"
+                    : "border-white/10 bg-white/[0.03]",
+              ].join(" ")}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-wheatSoft">{stage.verb}</span>
+                <span className={["h-2 w-2 rounded-full", isComplete ? "bg-ledger" : isCurrent ? "bg-wheat animate-pulse" : "bg-white/15"].join(" ")} />
+              </div>
+              <div className="mt-2 text-sm font-medium text-paper">{stage.label}</div>
+              <div className="mt-1 text-xs leading-relaxed text-mute">{stage.detail}</div>
             </div>
           );
         })}

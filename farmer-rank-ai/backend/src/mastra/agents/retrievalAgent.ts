@@ -34,10 +34,18 @@ export async function runRetrievalAgent(intent: ParsedIntent, limit = 20): Promi
 
   const vector = await embedText(searchText);
 
-  const filter =
-    intent.cropName && intent.cropName !== "unspecified" && intent.cropName !== "unknown"
-      ? { must: [{ key: "cropName", match: { value: intent.cropName } }] }
-      : undefined;
+  const must: Array<Record<string, unknown>> = [];
+  if (intent.cropName && intent.cropName !== "unspecified" && intent.cropName !== "unknown") {
+    must.push({ key: "cropName", match: { value: intent.cropName } });
+  }
+  if (intent.minQualityGrade) {
+    must.push({ key: "qualityGrade", match: { value: intent.minQualityGrade } });
+  }
+  if (intent.maxPricePerKg) {
+    must.push({ key: "pricePerKg", range: { lte: intent.maxPricePerKg } });
+  }
+
+  const filter = must.length > 0 ? { must } : undefined;
 
   let hits = await searchFarmers(vector, filter, limit);
 

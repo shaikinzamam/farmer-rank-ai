@@ -23,20 +23,29 @@ export async function ensureCollections(): Promise<void> {
     await qdrant.createCollection(env.qdrant.collectionFarmers, {
       vectors: { size: env.qdrant.embeddingDim, distance: "Cosine" },
     });
-    await qdrant.createPayloadIndex(env.qdrant.collectionFarmers, {
-      field_name: "cropName",
-      field_schema: "keyword",
-    });
-    await qdrant.createPayloadIndex(env.qdrant.collectionFarmers, {
-      field_name: "qualityGrade",
-      field_schema: "keyword",
-    });
   }
+  await ensurePayloadIndex("cropName", "keyword");
+  await ensurePayloadIndex("qualityGrade", "keyword");
+  await ensurePayloadIndex("pricePerKg", "float");
 
   if (!existing.has(env.qdrant.collectionMemory)) {
     await qdrant.createCollection(env.qdrant.collectionMemory, {
       vectors: { size: env.qdrant.embeddingDim, distance: "Cosine" },
     });
+  }
+}
+
+async function ensurePayloadIndex(fieldName: string, fieldSchema: "keyword" | "float"): Promise<void> {
+  try {
+    await qdrant.createPayloadIndex(env.qdrant.collectionFarmers, {
+      field_name: fieldName,
+      field_schema: fieldSchema,
+    });
+  } catch (err) {
+    const message = (err as Error).message.toLowerCase();
+    if (!message.includes("already exists")) {
+      throw err;
+    }
   }
 }
 

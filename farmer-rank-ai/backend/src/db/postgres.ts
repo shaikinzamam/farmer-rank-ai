@@ -13,6 +13,8 @@ export async function initSchema(): Promise<void> {
       location TEXT NOT NULL,
       latitude DOUBLE PRECISION,
       longitude DOUBLE PRECISION,
+      phone_number TEXT,
+      whatsapp_number TEXT,
       quantity_kg NUMERIC NOT NULL,
       price_per_kg NUMERIC NOT NULL,
       quality_grade TEXT NOT NULL CHECK (quality_grade IN ('A','B','C')),
@@ -25,6 +27,9 @@ export async function initSchema(): Promise<void> {
       created_at TIMESTAMPTZ DEFAULT now(),
       updated_at TIMESTAMPTZ DEFAULT now()
     );
+
+    ALTER TABLE farmers ADD COLUMN IF NOT EXISTS phone_number TEXT;
+    ALTER TABLE farmers ADD COLUMN IF NOT EXISTS whatsapp_number TEXT;
 
     CREATE TABLE IF NOT EXISTS feedback_events (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -63,6 +68,8 @@ export function rowToFarmerProfile(row: any): FarmerProfile {
     location: row.location,
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,
+    phoneNumber: row.phone_number ?? undefined,
+    whatsappNumber: row.whatsapp_number ?? undefined,
     quantityKg: Number(row.quantity_kg),
     pricePerKg: Number(row.price_per_kg),
     qualityGrade: row.quality_grade,
@@ -79,13 +86,19 @@ export function rowToFarmerProfile(row: any): FarmerProfile {
 
 export async function insertFarmer(farmer: FarmerProfile): Promise<void> {
   await pool.query(
-    `INSERT INTO farmers (id, name, crop_name, location, latitude, longitude, quantity_kg, price_per_kg, quality_grade, harvest_date, certifications, total_deliveries, on_time_deliveries, buyer_feedback_score)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+    `INSERT INTO farmers (id, name, crop_name, location, latitude, longitude, phone_number, whatsapp_number, quantity_kg, price_per_kg, quality_grade, harvest_date, certifications, total_deliveries, on_time_deliveries, buyer_feedback_score)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
      ON CONFLICT (id) DO UPDATE SET
-       name = EXCLUDED.name, crop_name = EXCLUDED.crop_name, location = EXCLUDED.location,
-       quantity_kg = EXCLUDED.quantity_kg, price_per_kg = EXCLUDED.price_per_kg,
-       quality_grade = EXCLUDED.quality_grade, harvest_date = EXCLUDED.harvest_date,
-       certifications = EXCLUDED.certifications, updated_at = now()`,
+        name = EXCLUDED.name, crop_name = EXCLUDED.crop_name, location = EXCLUDED.location,
+        latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude,
+        phone_number = EXCLUDED.phone_number, whatsapp_number = EXCLUDED.whatsapp_number,
+        quantity_kg = EXCLUDED.quantity_kg, price_per_kg = EXCLUDED.price_per_kg,
+        quality_grade = EXCLUDED.quality_grade, harvest_date = EXCLUDED.harvest_date,
+        certifications = EXCLUDED.certifications,
+        total_deliveries = EXCLUDED.total_deliveries,
+        on_time_deliveries = EXCLUDED.on_time_deliveries,
+        buyer_feedback_score = EXCLUDED.buyer_feedback_score,
+        updated_at = now()`,
     [
       farmer.id,
       farmer.name,
@@ -93,6 +106,8 @@ export async function insertFarmer(farmer: FarmerProfile): Promise<void> {
       farmer.location,
       farmer.latitude ?? null,
       farmer.longitude ?? null,
+      farmer.phoneNumber ?? null,
+      farmer.whatsappNumber ?? null,
       farmer.quantityKg,
       farmer.pricePerKg,
       farmer.qualityGrade,

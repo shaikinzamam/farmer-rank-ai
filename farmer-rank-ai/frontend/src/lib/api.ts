@@ -13,6 +13,8 @@ export interface FarmerProfile {
   name: string;
   cropName: string;
   location: string;
+  phoneNumber?: string;
+  whatsappNumber?: string;
   quantityKg: number;
   pricePerKg: number;
   qualityGrade: "A" | "B" | "C";
@@ -75,6 +77,8 @@ export interface FarmerProfileInput {
   name: string;
   cropName: string;
   location: string;
+  phoneNumber?: string;
+  whatsappNumber?: string;
   quantityKg: number;
   pricePerKg: number;
   qualityGrade: "A" | "B" | "C";
