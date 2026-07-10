@@ -1,4 +1,5 @@
 import axios from "axios";
+import CircuitBreaker from "opossum";
 import { env, isEnkryptMocked } from "../config/env";
 import { SafetyCheckResult, SafetyFlag } from "../types";
 
@@ -30,12 +31,7 @@ const BIAS_TERMS = [
   /\bgender\b/i,
 ];
 
-export async function checkText(text: string, context: "input" | "output"): Promise<SafetyCheckResult> {
-  if (isEnkryptMocked()) {
-    return localGuardrailCheck(text);
-  }
-
-  try {
+async function callEnkrypt(text: string, context: "input" | "output"): Promise<SafetyCheckResult> {
     const res = await axios.post(
       `${env.enkrypt.baseUrl}/guardrails/detect`,
       {
@@ -67,10 +63,21 @@ export async function checkText(text: string, context: "input" | "output"): Prom
       sanitizedText: data.sanitized_text ?? text,
       rawProviderResponse: data,
     };
-  } catch (err) {
-    console.warn("[enkrypt] API call failed, falling back to local guardrail:", (err as Error).message);
-    return localGuardrailCheck(text);
-  }
+}
+
+const enkryptBreaker = new CircuitBreaker(callEnkrypt, {
+  timeout: 8000,
+  errorThresholdPercentage: 50,
+  resetTimeout: 15000,
+});
+enkryptBreaker.fallback((text: string) => {
+  console.warn("[enkrypt] circuit breaker fallback: using local guardrail");
+  return localGuardrailCheck(text);
+});
+
+export async function checkText(text: string, context: "input" | "output"): Promise<SafetyCheckResult> {
+  if (isEnkryptMocked()) return localGuardrailCheck(text);
+  return enkryptBreaker.fire(text, context) as Promise<SafetyCheckResult>;
 }
 
 function checkFinancialGuarantees(text: string): SafetyFlag[] {
@@ -87,7 +94,7 @@ function checkFinancialGuarantees(text: string): SafetyFlag[] {
   return flags;
 }
 
-function localGuardrailCheck(text: string): SafetyCheckResult {
+export function localGuardrailCheck(text: string): SafetyCheckResult {
   const flags: SafetyFlag[] = [];
 
   flags.push(...checkFinancialGuarantees(text));

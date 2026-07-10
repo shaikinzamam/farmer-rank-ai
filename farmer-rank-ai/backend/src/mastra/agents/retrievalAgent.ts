@@ -9,6 +9,8 @@ const INSTRUCTIONS = `You are the Retrieval Agent. You do not generate free text
 convert a parsed buyer intent into a Qdrant semantic search over the farmer_listings collection
 and return the closest-matching farmer candidates for the Ranking Agent to score.`;
 
+// Registered for Mastra observability/playground introspection; retrieval is
+// deterministic embedding/vector/database work and does not need an LLM call.
 export const retrievalAgent = new Agent({
   name: "retrieval-agent",
   instructions: INSTRUCTIONS,

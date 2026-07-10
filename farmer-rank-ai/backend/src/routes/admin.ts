@@ -5,9 +5,7 @@ import { requireRole } from "../middleware/auth";
 export const adminRouter = Router();
 
 /** GET /admin/audit — retrieves logs of agent decisions and safety checks. */
-adminRouter.get("/admin/audit", requireRole("admin", "buyer"), async (req, res) => {
-  // NOTE: allowing "buyer" role here too so the demo works without a separate
-  // admin login; tighten to requireRole("admin") only in production.
+adminRouter.get("/admin/audit", requireRole("admin"), async (req, res) => {
   try {
     const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10) || 50, 500);
     const logs = await getAuditLogs(limit);

@@ -1,7 +1,9 @@
 import { Agent } from "@mastra/core/agent";
-import { chatComplete, ChatMessage } from "../../llm/client";
+import { chatComplete } from "../../llm/client";
+import { isLlmMocked } from "../../config/env";
 import { getModel } from "../model";
 import { ParsedIntent } from "../../types";
+import { z } from "zod";
 
 const INSTRUCTIONS = `You are the Intent Agent for Farmer Rank AI, an agricultural procurement platform.
 Extract a structured buying requirement from a buyer's natural language query.
@@ -35,22 +37,27 @@ export const intentAgent = new Agent({
   model: getModel(),
 });
 
+const intentOutputSchema = z.object({
+  cropName: z.string(),
+  quantityKg: z.number().nullable(),
+  maxPricePerKg: z.number().nullable(),
+  location: z.string().nullable(),
+  minQualityGrade: z.enum(["A", "B", "C"]).nullable(),
+  confidence: z.number(),
+  notes: z.string(),
+});
+
 export async function runIntentAgent(rawQuery: string): Promise<ParsedIntent> {
-  const messages: ChatMessage[] = [
-    { role: "system", content: INSTRUCTIONS },
-    { role: "user", content: rawQuery },
-  ];
-
-  const raw = await chatComplete(messages, {
-    jsonMode: true,
-    mockResponder: () => mockParseIntent(rawQuery),
-  });
-
   let parsed: any;
-  try {
+  if (isLlmMocked()) {
+    const raw = await chatComplete([{ role: "user", content: rawQuery }], {
+      jsonMode: true,
+      mockResponder: () => mockParseIntent(rawQuery),
+    });
     parsed = JSON.parse(raw);
-  } catch {
-    parsed = JSON.parse(mockParseIntent(rawQuery));
+  } else {
+    const generated = await intentAgent.generate(rawQuery, { output: intentOutputSchema });
+    parsed = generated.object;
   }
 
   return {

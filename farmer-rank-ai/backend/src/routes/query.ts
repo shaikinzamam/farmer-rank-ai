@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { runQueryPipeline } from "../mastra/orchestrator";
+import { mastra } from "../mastra";
 import { AuthedRequest } from "../middleware/auth";
 
 export const queryRouter = Router();
@@ -17,8 +17,17 @@ queryRouter.post("/query", async (req: AuthedRequest, res) => {
   }
 
   try {
-    const result = await runQueryPipeline(parsed.data.query, req.user?.id ?? "anonymous");
-    return res.status(200).json(result);
+    const workflow = mastra.getWorkflow("queryWorkflow");
+    const run = workflow.createRun();
+    const execution = await run.start({ inputData: {
+      rawQuery: parsed.data.query,
+      userId: req.user?.id ?? "anonymous",
+      userRole: req.user?.role ?? "buyer",
+      // Authenticated buyers are the currently supported "contact unlocked" state.
+      contactUnlocked: req.user?.role === "buyer",
+    } });
+    if (execution.status !== "success") throw new Error(`Query workflow ended with status ${execution.status}`);
+    return res.status(200).json(execution.result);
   } catch (err) {
     console.error("[POST /query] pipeline error:", err);
     return res.status(502).json({

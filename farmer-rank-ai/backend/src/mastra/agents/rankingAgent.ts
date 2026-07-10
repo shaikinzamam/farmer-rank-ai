@@ -8,6 +8,8 @@ Crop Quality 30%, Delivery Reliability 25%, Price Match 20%, Location/Distance 1
 Buyer Feedback 10%, Market Demand Match 5%. You never use identity attributes
 (caste, religion, gender, name) as a scoring input.`;
 
+// Registered for Mastra observability/playground introspection; scoring is a
+// deterministic, auditable formula and therefore does not need an LLM call.
 export const rankingAgent = new Agent({
   name: "ranking-agent",
   instructions: INSTRUCTIONS,

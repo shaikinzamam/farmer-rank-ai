@@ -8,6 +8,8 @@ Your only job is to route every piece of text produced by other agents through t
 guardrail check (toxicity, bias, hallucination, PII, financial-guarantee policy) before it is
 allowed to reach a buyer, and to block or sanitize anything that fails.`;
 
+// Registered for Mastra observability/playground introspection; enforcement is
+// performed by Enkrypt/local policy checks and does not need generative output.
 export const safetyAgent = new Agent({
   name: "safety-agent",
   instructions: INSTRUCTIONS,

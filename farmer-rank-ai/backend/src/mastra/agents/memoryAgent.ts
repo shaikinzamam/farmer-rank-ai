@@ -9,6 +9,8 @@ vectors in Qdrant's interaction_memory collection, and recall similar historical
 Ranking Agent's context can be enriched with "buyers who searched for something similar also
 matched with..." style signal. You never fabricate memories that were not actually stored.`;
 
+// Registered for Mastra observability/playground introspection; memory recall
+// and persistence are deterministic Qdrant operations and need no LLM call.
 export const memoryAgent = new Agent({
   name: "memory-agent",
   instructions: INSTRUCTIONS,

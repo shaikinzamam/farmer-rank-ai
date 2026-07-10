@@ -1,6 +1,7 @@
 import { Agent } from "@mastra/core/agent";
 import { getModel } from "../model";
-import { chatComplete, ChatMessage } from "../../llm/client";
+import { chatComplete } from "../../llm/client";
+import { isLlmMocked } from "../../config/env";
 import { ParsedIntent, RankedFarmer } from "../../types";
 
 const INSTRUCTIONS = `You are the Explanation Agent for Farmer Rank AI. For each ranked farmer you
@@ -37,14 +38,9 @@ Score breakdown (0-100 overall, sub-scores 0-1): ${JSON.stringify(item.scoreBrea
 
 Write the 1-2 sentence explanation now.`;
 
-    const messages: ChatMessage[] = [
-      { role: "system", content: INSTRUCTIONS },
-      { role: "user", content: prompt },
-    ];
-
-    const explanation = await chatComplete(messages, {
-      mockResponder: () => mockExplanation(item),
-    });
+    const explanation = isLlmMocked()
+      ? await chatComplete([{ role: "user", content: prompt }], { mockResponder: () => mockExplanation(item) })
+      : (await explanationAgent.generate(prompt)).text;
 
     results.push({ ...item, explanation: explanation.trim() });
   }

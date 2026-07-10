@@ -27,6 +27,6 @@ export async function cacheSet(key: string, value: unknown, ttlSeconds = 60): Pr
   store.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
 }
 
-export function cacheKeyForQuery(query: string): string {
-  return `query:${query.trim().toLowerCase()}`;
+export function cacheKeyForQuery(query: string, userId: string): string {
+  return `query:${encodeURIComponent(userId)}:${query.trim().toLowerCase()}`;
 }

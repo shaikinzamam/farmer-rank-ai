@@ -45,7 +45,7 @@ docker-compose.yml   Postgres + Qdrant + Redis + both apps, wired together
 
 | Criterion | Where it lives |
 |---|---|
-| **Mastra Integration Depth (25%)** | `backend/src/mastra/` — 7 distinct `Agent` instances registered on a `Mastra` instance (`mastra/index.ts`), orchestrated as a real multi-step workflow in `mastra/orchestrator.ts` |
+| **Mastra Integration Depth (25%)** | `backend/src/mastra/` — 7 distinct `Agent` instances registered on one `Mastra` instance; `queryWorkflow.ts` is the live request path invoked through Mastra's workflow execution API |
 | **Qdrant Integration Quality (20%)** | `backend/src/db/qdrant.ts` — two purpose-built collections (`farmer_listings` for retrieval, `interaction_memory` for the Memory Agent), payload indexes, filtered search with graceful fallback |
 | **Enkrypt AI Coverage (20%)** | `backend/src/safety/enkrypt.ts` — input-side and output-side checks on every request, custom financial-guarantee policy layered on top, fail-safe sanitization (never a raw crash or silent pass-through) |
 | **Agent Output Quality (20%)** | Ranking is a deterministic, auditable formula (`rankingAgent.ts`); explanations are grounded strictly in the computed score breakdown (`explanationAgent.ts`), not free-floating LLM claims |
@@ -113,8 +113,8 @@ Check `/health` any time to see which mode each subsystem is running in.
    factors is visible and adds up to the total score. Nothing is a black box.
 4. Point out the **per-rank explanation** — grounded in the exact numbers shown
    in the ledger, not a generic LLM summary.
-5. Open the **admin** page — every agent step for that query is logged with a
-   shared trace id, including the safety check outcome.
+5. Open the **admin** page with an admin token — every agent step for that query
+   is logged with a shared trace id, including the safety check outcome.
 6. Try a query that would coax a financial-guarantee claim (e.g. ask the
    Explanation Agent's mock path to describe "guaranteed profit") to show the
    Safety Agent intercepting and replacing it.

@@ -1,0 +1,13 @@
+warning: in the working copy of 'farmer-rank-ai/README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/db/cache.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/mastra/agents/explanationAgent.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/mastra/agents/intentAgent.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/mastra/agents/memoryAgent.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/mastra/agents/rankingAgent.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/mastra/agents/retrievalAgent.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/mastra/agents/safetyAgent.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/mastra/orchestrator.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/mastra/workflows/queryWorkflow.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/routes/admin.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/routes/query.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'farmer-rank-ai/backend/src/safety/enkrypt.ts', LF will be replaced by CRLF the next time Git touches it
