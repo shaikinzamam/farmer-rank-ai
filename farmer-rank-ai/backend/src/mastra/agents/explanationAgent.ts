@@ -27,9 +27,7 @@ export const explanationAgent = new Agent({
  * PRD's "AI Risks: hallucinations" concern.
  */
 export async function runExplanationAgent(ranked: RankedFarmer[], intent: ParsedIntent): Promise<RankedFarmer[]> {
-  const results: RankedFarmer[] = [];
-
-  for (const item of ranked) {
+  return Promise.all(ranked.map(async (item) => {
     const prompt = `Buyer requirement: ${intent.rawQuery}
 Farmer: ${item.farmer.name}, crop: ${item.farmer.cropName}, grade: ${item.farmer.qualityGrade}, price/kg: ${item.farmer.pricePerKg}
 Rank: #${item.rank}
@@ -38,18 +36,20 @@ Score breakdown (0-100 overall, sub-scores 0-1): ${JSON.stringify(item.scoreBrea
 Write the 1-2 sentence explanation now.`;
 
     // Explanations use chatComplete() to support Featherless/Grok/OpenAI consistently while the Mastra Agent remains registered in the workflow.
-    const explanation = await chatComplete(
-      [
-        { role: "system", content: INSTRUCTIONS },
-        { role: "user", content: prompt },
-      ],
-      { mockResponder: () => mockExplanation(item) }
-    );
-
-    results.push({ ...item, explanation: explanation.trim() });
-  }
-
-  return results;
+    try {
+      const explanation = await chatComplete(
+        [
+          { role: "system", content: INSTRUCTIONS },
+          { role: "user", content: prompt },
+        ],
+        { mockResponder: () => mockExplanation(item) }
+      );
+      return { ...item, explanation: explanation.trim() };
+    } catch (err) {
+      console.warn("[explanation] generation failed; using deterministic explanation:", err instanceof Error ? err.message : err);
+      return { ...item, explanation: mockExplanation(item) };
+    }
+  }));
 }
 
 function mockExplanation(item: RankedFarmer): string {

@@ -52,7 +52,16 @@ export async function runIntentAgent(rawQuery: string): Promise<ParsedIntent> {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    parsed = JSON.parse(mockParseIntent(rawQuery));
+    const jsonBlock = raw.match(/\{[\s\S]*\}/)?.[0];
+    if (jsonBlock) {
+      try {
+        parsed = JSON.parse(jsonBlock);
+      } catch {
+        parsed = JSON.parse(mockParseIntent(rawQuery));
+      }
+    } else {
+      parsed = JSON.parse(mockParseIntent(rawQuery));
+    }
   }
 
   return {

@@ -31,6 +31,13 @@ const BIAS_TERMS = [
   /\bgender\b/i,
 ];
 
+const SECURITY_ABUSE_PATTERNS = [
+  /\badmin\s+access\b/i,
+  /\bpassword\s+reset\b/i,
+  /\bbypass\b/i,
+  /\bbribe\b/i,
+];
+
 async function callEnkrypt(text: string, context: "input" | "output"): Promise<SafetyCheckResult> {
     const res = await axios.post(
       `${env.enkrypt.baseUrl}/guardrails/detect`,
@@ -105,6 +112,16 @@ export function localGuardrailCheck(text: string): SafetyCheckResult {
         category: "bias",
         severity: "high",
         detail: `Text references a protected identity attribute matching /${pattern.source}/, which must never factor into ranking or explanation.`,
+      });
+    }
+  }
+
+  for (const pattern of SECURITY_ABUSE_PATTERNS) {
+    if (pattern.test(text)) {
+      flags.push({
+        category: "policy_violation",
+        severity: "high",
+        detail: `Text contains a prohibited security or abuse phrase matching /${pattern.source}/.`,
       });
     }
   }

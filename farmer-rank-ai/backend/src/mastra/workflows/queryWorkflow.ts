@@ -46,6 +46,28 @@ function maskContact(value?: string): string | undefined {
   return `${prefix} ******${digits.slice(-4)}`;
 }
 
+async function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T, label: string): Promise<T> {
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((resolve) => setTimeout(() => {
+        console.warn(`[timeout] ${label} exceeded ${ms}ms, using fallback`);
+        resolve(fallback);
+      }, ms)),
+    ]);
+  } catch (err) {
+    console.warn(`[fallback] ${label} failed:`, err instanceof Error ? err.message : err);
+    return fallback;
+  }
+}
+
+function deterministicExplanations(ranked: RankedFarmer[]): RankedFarmer[] {
+  return ranked.map((item) => ({
+    ...item,
+    explanation: `Ranked #${item.rank} because crop, grade, price, delivery reliability, location match, and feedback contribute to an overall match score of ${item.scoreBreakdown.weightedTotal}/100.`,
+  }));
+}
+
 async function applyContactPolicy(ranked: RankedFarmer[], canViewFullContact: boolean): Promise<RankedFarmer[]> {
   return Promise.all(ranked.map(async (item) => {
     const current = await getFarmerById(item.farmer.id);
@@ -107,7 +129,13 @@ const evaluate = createStep({
   id: "evaluate", inputSchema: workflowStateSchema, outputSchema: workflowStateSchema,
   execute: async ({ inputData }) => {
     let ranked = await runRankingAgent(inputData.candidates, inputData.intent, inputData.memoryContext.topFarmerIds);
-    ranked = await runExplanationAgent(ranked.slice(0, 10), inputData.intent);
+    const topRanked = ranked.slice(0, 10);
+    ranked = await withTimeout(
+      runExplanationAgent(topRanked, inputData.intent),
+      15000,
+      deterministicExplanations(topRanked),
+      "explanation generation"
+    );
     return { ...inputData, ranked };
   },
 });

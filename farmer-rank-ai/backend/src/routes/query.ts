@@ -18,7 +18,7 @@ queryRouter.post("/query", async (req: AuthedRequest, res) => {
 
   try {
     const workflow = mastra.getWorkflow("queryWorkflow");
-    const run = workflow.createRun();
+    const run = await workflow.createRunAsync();
     const execution = await run.start({ inputData: {
       rawQuery: parsed.data.query,
       userId: req.user?.id ?? "anonymous",
@@ -32,6 +32,7 @@ queryRouter.post("/query", async (req: AuthedRequest, res) => {
     console.error("[POST /query] pipeline error:", err);
     return res.status(502).json({
       error: "The agent pipeline could not complete this request. Please retry.",
+      ...(process.env.NODE_ENV !== "production" ? { detail: (err as Error).message } : {}),
     });
   }
 });

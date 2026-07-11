@@ -1,6 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import { getModel } from "../model";
-import { checkText } from "../../safety/enkrypt";
+import { checkText, localGuardrailCheck } from "../../safety/enkrypt";
 import { RankedFarmer, SafetyCheckResult } from "../../types";
 
 const INSTRUCTIONS = `You are the Safety Agent. You never generate buyer-facing content yourself.
@@ -19,6 +19,15 @@ export const safetyAgent = new Agent({
 export const MANDATORY_DISCLAIMER =
   "Buyer must independently verify crop quality, quantity, and delivery terms before finalizing any purchase. Rankings reflect platform data and do not constitute a guarantee of price, profit, or sale.";
 
+async function checkTextWithFallback(text: string, context: "input" | "output"): Promise<SafetyCheckResult> {
+  try {
+    return await checkText(text, context);
+  } catch (err) {
+    console.warn("[safety] provider check failed; using local guardrail:", err instanceof Error ? err.message : err);
+    return localGuardrailCheck(text);
+  }
+}
+
 /**
  * Safety step: runs Enkrypt AI over the buyer's raw query (input-side check
  * for abuse/injection) and over every generated explanation (output-side
@@ -26,7 +35,7 @@ export const MANDATORY_DISCLAIMER =
  * for every request per the PRD's "Mandatory Enkrypt AI Validation" (5.3).
  */
 export async function runSafetyAgent(rawQuery: string, ranked: RankedFarmer[]): Promise<{ ranked: RankedFarmer[]; safety: SafetyCheckResult }> {
-  const inputCheck = await checkText(rawQuery, "input");
+  const inputCheck = await checkTextWithFallback(rawQuery, "input");
 
   const allFlags = [...inputCheck.flags];
   const sanitized: RankedFarmer[] = [];
@@ -36,7 +45,7 @@ export async function runSafetyAgent(rawQuery: string, ranked: RankedFarmer[]): 
       sanitized.push(item);
       continue;
     }
-    const outputCheck = await checkText(item.explanation, "output");
+    const outputCheck = await checkTextWithFallback(item.explanation, "output");
     allFlags.push(...outputCheck.flags);
 
     if (outputCheck.passed) {

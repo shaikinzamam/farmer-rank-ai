@@ -2,10 +2,9 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { env, isLlmMocked } from "../config/env";
 
 /**
- * Mastra's `Agent` class expects a Vercel AI SDK model object. Grok (xAI)
- * exposes an OpenAI-compatible /chat/completions API, so we point the
- * OpenAI provider factory at Grok's base URL. This is what lets every
- * `new Agent({ model: getModel() })` in this project actually call Grok.
+ * Mastra's `Agent` class expects a Vercel AI SDK model object. Featherless
+ * and Grok (xAI) expose OpenAI-compatible /chat/completions APIs, so we point
+ * the OpenAI provider factory at the selected provider's base URL.
  *
  * NOTE: The agents in this codebase call `chatComplete()` from
  * `src/llm/client.ts` directly for their core reasoning (so we control the
@@ -13,7 +12,7 @@ import { env, isLlmMocked } from "../config/env";
  * so each Agent is still a fully valid, independently invokable Mastra
  * primitive (e.g. for `agent.generate()` / `agent.stream()` calls from
  * Mastra tooling, playground, or workflow steps) — both paths hit the same
- * underlying Grok deployment.
+ * underlying selected deployment.
  */
 export function getModel() {
   if (isLlmMocked()) {

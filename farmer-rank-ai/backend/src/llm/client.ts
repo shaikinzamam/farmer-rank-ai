@@ -81,7 +81,18 @@ export async function chatComplete(messages: ChatMessage[], opts: { jsonMode?: b
   }
 
   if (env.llmProvider === "featherless" && env.featherless.apiKey) {
-    return callFeatherless(messages, !!opts.jsonMode);
+    try {
+      return await callFeatherless(messages, !!opts.jsonMode);
+    } catch (err) {
+      console.warn("[llm] Featherless failed; using fallback:", err instanceof Error ? err.message : err);
+      if (env.openai.apiKey) {
+        return callOpenAiFallback(messages, !!opts.jsonMode);
+      }
+      if (opts.mockResponder) {
+        return opts.mockResponder(messages);
+      }
+      throw err;
+    }
   } else if (env.grok.apiKey) {
     return grokBreaker.fire(messages, !!opts.jsonMode) as Promise<string>;
   }
