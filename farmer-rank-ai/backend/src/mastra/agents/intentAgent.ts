@@ -1,9 +1,7 @@
 import { Agent } from "@mastra/core/agent";
 import { chatComplete } from "../../llm/client";
-import { isLlmMocked } from "../../config/env";
 import { getModel } from "../model";
 import { ParsedIntent } from "../../types";
-import { z } from "zod";
 
 const INSTRUCTIONS = `You are the Intent Agent for Farmer Rank AI, an agricultural procurement platform.
 Extract a structured buying requirement from a buyer's natural language query.
@@ -37,27 +35,24 @@ export const intentAgent = new Agent({
   model: getModel(),
 });
 
-const intentOutputSchema = z.object({
-  cropName: z.string(),
-  quantityKg: z.number().nullable(),
-  maxPricePerKg: z.number().nullable(),
-  location: z.string().nullable(),
-  minQualityGrade: z.enum(["A", "B", "C"]).nullable(),
-  confidence: z.number(),
-  notes: z.string(),
-});
-
 export async function runIntentAgent(rawQuery: string): Promise<ParsedIntent> {
-  let parsed: any;
-  if (isLlmMocked()) {
-    const raw = await chatComplete([{ role: "user", content: rawQuery }], {
+  // Mastra Agent is registered for workflow observability, but structured JSON parsing uses chatComplete() because some OpenAI-compatible providers do not support Mastra object/tool generation reliably.
+  const raw = await chatComplete(
+    [
+      { role: "system", content: INSTRUCTIONS },
+      { role: "user", content: rawQuery },
+    ],
+    {
       jsonMode: true,
       mockResponder: () => mockParseIntent(rawQuery),
-    });
+    }
+  );
+
+  let parsed: any;
+  try {
     parsed = JSON.parse(raw);
-  } else {
-    const generated = await intentAgent.generate(rawQuery, { output: intentOutputSchema });
-    parsed = generated.object;
+  } catch {
+    parsed = JSON.parse(mockParseIntent(rawQuery));
   }
 
   return {

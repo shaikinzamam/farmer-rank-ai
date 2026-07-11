@@ -1,7 +1,6 @@
 import { Agent } from "@mastra/core/agent";
 import { getModel } from "../model";
 import { chatComplete } from "../../llm/client";
-import { isLlmMocked } from "../../config/env";
 import { ParsedIntent, RankedFarmer } from "../../types";
 
 const INSTRUCTIONS = `You are the Explanation Agent for Farmer Rank AI. For each ranked farmer you
@@ -38,9 +37,14 @@ Score breakdown (0-100 overall, sub-scores 0-1): ${JSON.stringify(item.scoreBrea
 
 Write the 1-2 sentence explanation now.`;
 
-    const explanation = isLlmMocked()
-      ? await chatComplete([{ role: "user", content: prompt }], { mockResponder: () => mockExplanation(item) })
-      : (await explanationAgent.generate(prompt)).text;
+    // Explanations use chatComplete() to support Featherless/Grok/OpenAI consistently while the Mastra Agent remains registered in the workflow.
+    const explanation = await chatComplete(
+      [
+        { role: "system", content: INSTRUCTIONS },
+        { role: "user", content: prompt },
+      ],
+      { mockResponder: () => mockExplanation(item) }
+    );
 
     results.push({ ...item, explanation: explanation.trim() });
   }

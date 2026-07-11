@@ -24,6 +24,23 @@ async function callGrok(messages: ChatMessage[], jsonMode: boolean): Promise<str
   return res.data.choices[0].message.content as string;
 }
 
+async function callFeatherless(messages: ChatMessage[], jsonMode: boolean): Promise<string> {
+  const res = await axios.post(
+    `${env.featherless.baseUrl}/chat/completions`,
+    {
+      model: env.featherless.model,
+      messages,
+      temperature: 0.2,
+      ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
+    },
+    {
+      headers: { Authorization: `Bearer ${env.featherless.apiKey}`, "Content-Type": "application/json" },
+      timeout: 10000,
+    }
+  );
+  return res.data.choices[0].message.content as string;
+}
+
 async function callOpenAiFallback(messages: ChatMessage[], jsonMode: boolean): Promise<string> {
   const res = await axios.post(
     "https://api.openai.com/v1/chat/completions",
@@ -58,12 +75,14 @@ grokBreaker.fallback((messages: ChatMessage[], jsonMode: boolean) => callOpenAiF
 export async function chatComplete(messages: ChatMessage[], opts: { jsonMode?: boolean; mockResponder?: (messages: ChatMessage[]) => string } = {}): Promise<string> {
   if (isLlmMocked()) {
     if (!opts.mockResponder) {
-      throw new Error("LLM is not configured (no GROK_API_KEY/OPENAI_API_KEY) and no mockResponder was supplied.");
+      throw new Error("LLM is not configured (no GROK_API_KEY/OPENAI_API_KEY/FEATHERLESS_API_KEY) and no mockResponder was supplied.");
     }
     return opts.mockResponder(messages);
   }
 
-  if (env.grok.apiKey) {
+  if (env.llmProvider === "featherless" && env.featherless.apiKey) {
+    return callFeatherless(messages, !!opts.jsonMode);
+  } else if (env.grok.apiKey) {
     return grokBreaker.fire(messages, !!opts.jsonMode) as Promise<string>;
   }
   return callOpenAiFallback(messages, !!opts.jsonMode);

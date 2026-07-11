@@ -24,6 +24,14 @@ export function getModel() {
     return createOpenAI({ apiKey: "mock-key" })("gpt-4o-mini");
   }
 
+  if (env.llmProvider === "featherless" && env.featherless.apiKey) {
+    const featherlessProvider = createOpenAI({
+      apiKey: env.featherless.apiKey,
+      baseURL: env.featherless.baseUrl,
+    });
+    return featherlessProvider(env.featherless.model);
+  }
+
   if (env.grok.apiKey) {
     const grokProvider = createOpenAI({
       apiKey: env.grok.apiKey,

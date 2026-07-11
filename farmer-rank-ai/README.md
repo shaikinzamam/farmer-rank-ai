@@ -139,6 +139,16 @@ is OpenAI-compatible), with automatic circuit-breaker fallback to OpenAI if
 `OPENAI_API_KEY` is also set and Grok is unreachable — satisfying the PRD's
 "circuit breakers for external LLM... APIs" NFR.
 
+### Using Featherless.ai as LLM Provider
+
+1. Sign up on Featherless.ai and create an API key from the API Keys page.
+2. Choose a model from the model catalog. The recommended model is
+   `deepseek-ai/DeepSeek-V3-0324`.
+3. Set `FEATHERLESS_API_KEY` in `backend/.env`.
+4. Set `LLM_PROVIDER=featherless`.
+
+Featherless uses the OpenAI-compatible `/v1/chat/completions` API.
+
 ## What's stubbed vs. production-real
 
 This is a hackathon scaffold, built to demo the **agentic architecture**

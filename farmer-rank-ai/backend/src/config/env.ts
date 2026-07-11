@@ -15,6 +15,12 @@ export const env = {
     baseUrl: req("GROK_BASE_URL", "https://api.x.ai/v1"),
     model: req("GROK_MODEL", "grok-2-latest"),
   },
+  featherless: {
+    apiKey: req("FEATHERLESS_API_KEY"),
+    baseUrl: req("FEATHERLESS_BASE_URL", "https://api.featherless.ai/v1"),
+    model: req("FEATHERLESS_MODEL", "deepseek-ai/DeepSeek-V3-0324"),
+  },
+  llmProvider: req("LLM_PROVIDER", "grok"),
   fallbackProvider: req("FALLBACK_LLM_PROVIDER", "openai"),
   openai: {
     apiKey: req("OPENAI_API_KEY"),
@@ -47,5 +53,6 @@ export const env = {
 /** True when we have no real Grok credentials — the system falls back to
  * deterministic mock reasoning so the whole pipeline still runs end-to-end
  * during a hackathon demo without live keys. */
-export const isLlmMocked = () => !env.grok.apiKey && !env.openai.apiKey;
+export const isLlmMocked = () =>
+  !env.grok.apiKey && !env.openai.apiKey && !env.featherless.apiKey;
 export const isEnkryptMocked = () => !env.enkrypt.apiKey;
