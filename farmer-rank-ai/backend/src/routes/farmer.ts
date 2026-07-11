@@ -12,8 +12,8 @@ const FarmerProfileSchema = z.object({
   location: z.string().min(2),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
-  phoneNumber: z.string().min(6).optional(),
-  whatsappNumber: z.string().min(6).optional(),
+  phone: z.string().min(6),
+  whatsapp: z.preprocess((value) => value === "" ? undefined : value, z.string().min(6).optional()),
   quantityKg: z.number().positive(),
   pricePerKg: z.number().positive(),
   qualityGrade: z.enum(["A", "B", "C"]),
@@ -29,7 +29,12 @@ farmerRouter.post("/farmer/profile", async (req, res) => {
   }
 
   try {
-    const { farmer, blocked } = await runFarmerProfileAgent(parsed.data);
+    const { phone, whatsapp, ...profile } = parsed.data;
+    const { farmer, blocked } = await runFarmerProfileAgent({
+      ...profile,
+      phoneNumber: phone,
+      whatsappNumber: whatsapp,
+    });
     if (blocked) {
       return res.status(422).json({
         error: "Listing failed the safety guardrail check and was not published.",

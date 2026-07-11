@@ -1,11 +1,11 @@
-import { v4 as uuidv4 } from "uuid";
 import { initSchema, insertFarmer } from "../db/postgres";
 import { ensureCollections, farmerToEmbeddingText, upsertFarmerVector } from "../db/qdrant";
 import { embedText } from "../llm/embeddings";
 import { FarmerProfile } from "../types";
 
-const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "id" | "createdAt" | "updatedAt">> = [
+const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "createdAt" | "updatedAt">> = [
   {
+    id: "10000000-0000-4000-8000-000000000001",
     name: "Ramesh Gowda",
     cropName: "tomato",
     location: "Bengaluru Rural, Karnataka",
@@ -24,6 +24,7 @@ const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "id" | "createdAt" | "updatedAt"
     onTimeDeliveries: 38,
   },
   {
+    id: "10000000-0000-4000-8000-000000000002",
     name: "Lakshmi Devi",
     cropName: "tomato",
     location: "Kolar, Karnataka",
@@ -42,6 +43,7 @@ const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "id" | "createdAt" | "updatedAt"
     onTimeDeliveries: 22,
   },
   {
+    id: "10000000-0000-4000-8000-000000000003",
     name: "Suresh Patil",
     cropName: "tomato",
     location: "Chikkaballapur, Karnataka",
@@ -60,6 +62,7 @@ const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "id" | "createdAt" | "updatedAt"
     onTimeDeliveries: 8,
   },
   {
+    id: "10000000-0000-4000-8000-000000000004",
     name: "Meena Kumari",
     cropName: "onion",
     location: "Bengaluru Rural, Karnataka",
@@ -78,6 +81,7 @@ const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "id" | "createdAt" | "updatedAt"
     onTimeDeliveries: 27,
   },
   {
+    id: "10000000-0000-4000-8000-000000000005",
     name: "Anil Kumar",
     cropName: "tomato",
     location: "Hosur, Tamil Nadu",
@@ -96,6 +100,7 @@ const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "id" | "createdAt" | "updatedAt"
     onTimeDeliveries: 54,
   },
   {
+    id: "10000000-0000-4000-8000-000000000006",
     name: "Farmer Cooperative Mysuru",
     cropName: "mango",
     location: "Mysuru, Karnataka",
@@ -123,7 +128,7 @@ async function main() {
   console.log(`Seeding ${SAMPLE_FARMERS.length} sample farmers...`);
   for (const sample of SAMPLE_FARMERS) {
     const now = new Date().toISOString();
-    const farmer: FarmerProfile = { ...sample, id: uuidv4(), createdAt: now, updatedAt: now };
+    const farmer: FarmerProfile = { ...sample, createdAt: now, updatedAt: now };
     await insertFarmer(farmer);
     const vector = await embedText(farmerToEmbeddingText(farmer));
     await upsertFarmerVector(farmer, vector);

@@ -77,8 +77,8 @@ export interface FarmerProfileInput {
   name: string;
   cropName: string;
   location: string;
-  phoneNumber?: string;
-  whatsappNumber?: string;
+  phone: string;
+  whatsapp: string;
   quantityKg: number;
   pricePerKg: number;
   qualityGrade: "A" | "B" | "C";
@@ -94,7 +94,10 @@ export async function createFarmerProfile(input: FarmerProfileInput): Promise<{ 
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Request failed with ${res.status}`);
+    if (body?.details?.fieldErrors?.harvestDate) {
+      throw new Error("Harvest date is required.");
+    }
+    throw new Error(body.detail || body.error || `Request failed with ${res.status}`);
   }
   return res.json();
 }
@@ -115,7 +118,13 @@ export async function fetchAuditLogs(limit = 50): Promise<{ logs: AuditLogEntry[
   const res = await fetch(`${BASE}/admin/audit?limit=${limit}`);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `Request failed with ${res.status}`);
+    if (res.status === 403) {
+      throw new Error("Admin access required. Current demo user is buyer.");
+    }
+    if (res.status === 502) {
+      throw new Error("Backend unreachable.");
+    }
+    throw new Error(body.detail || body.error || `Request failed with ${res.status}`);
   }
   return res.json();
 }

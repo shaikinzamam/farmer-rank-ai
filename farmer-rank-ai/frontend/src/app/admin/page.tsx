@@ -58,7 +58,7 @@ export default function AdminPage() {
 
       {error && (
         <div className="rounded-[24px] border border-danger/40 bg-danger/10 px-5 py-4 text-sm text-danger">
-          {error} - start Postgres and verify the backend /admin/audit endpoint.
+          {error}
         </div>
       )}
 

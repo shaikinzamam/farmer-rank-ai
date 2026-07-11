@@ -129,7 +129,7 @@ const evaluate = createStep({
   id: "evaluate", inputSchema: workflowStateSchema, outputSchema: workflowStateSchema,
   execute: async ({ inputData }) => {
     let ranked = await runRankingAgent(inputData.candidates, inputData.intent, inputData.memoryContext.topFarmerIds);
-    const topRanked = ranked.slice(0, 10);
+    const topRanked = ranked.slice(0, 5);
     ranked = await withTimeout(
       runExplanationAgent(topRanked, inputData.intent),
       15000,

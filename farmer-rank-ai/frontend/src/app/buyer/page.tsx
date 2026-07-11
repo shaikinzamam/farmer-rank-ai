@@ -16,6 +16,13 @@ export default function BuyerPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<QueryPipelineResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const uniqueRankedFarmers = result
+    ? Array.from(new Map(result.rankedFarmers.map((item) => {
+        const farmer = item.farmer;
+        const key = farmer.id || `${farmer.name}-${farmer.cropName}-${farmer.location}`;
+        return [key, item] as const;
+      })).values()).slice(0, 5)
+    : [];
 
   async function handleSubmit(q?: string) {
     const text = (q ?? query).trim();
@@ -116,7 +123,7 @@ export default function BuyerPage() {
           </div>
 
           <div className="grid gap-4">
-            {result.rankedFarmers.map((rankedFarmer) => (
+            {uniqueRankedFarmers.map((rankedFarmer) => (
               <RankingCard key={rankedFarmer.farmer.id} rankedFarmer={rankedFarmer} />
             ))}
           </div>

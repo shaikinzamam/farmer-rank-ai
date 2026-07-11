@@ -59,10 +59,18 @@ export async function runRetrievalAgent(intent: ParsedIntent, limit = 20): Promi
   }
 
   const candidates: RetrievedCandidate[] = [];
+  const seenIds = new Set<string>();
+  const seenListings = new Set<string>();
   for (const hit of hits) {
     const farmerId = String(hit.id);
     const farmer = await getFarmerById(farmerId);
     if (farmer) {
+      const listingKey = [farmer.name, farmer.cropName, farmer.location, farmer.pricePerKg]
+        .map((value) => String(value).trim().toLowerCase())
+        .join("|");
+      if (seenIds.has(farmer.id) || seenListings.has(listingKey)) continue;
+      seenIds.add(farmer.id);
+      seenListings.add(listingKey);
       candidates.push({ farmer, similarityScore: hit.score });
     }
   }

@@ -7,8 +7,8 @@ const initial = {
   name: "",
   cropName: "",
   location: "",
-  phoneNumber: "",
-  whatsappNumber: "",
+  phone: "",
+  whatsapp: "",
   quantityKg: 500,
   pricePerKg: 20,
   qualityGrade: "A" as "A" | "B" | "C",
@@ -27,9 +27,15 @@ export default function FarmerPage() {
     setStatus({ type: "idle" });
     try {
       const { farmer } = await createFarmerProfile({
-        ...form,
-        phoneNumber: form.phoneNumber.trim() || undefined,
-        whatsappNumber: form.whatsappNumber.trim() || undefined,
+        name: form.name,
+        cropName: form.cropName,
+        quantityKg: Number(form.quantityKg),
+        qualityGrade: form.qualityGrade,
+        pricePerKg: Number(form.pricePerKg),
+        location: form.location,
+        harvestDate: form.harvestDate,
+        phone: form.phone,
+        whatsapp: form.whatsapp,
         certifications: form.certifications.split(",").map((item) => item.trim()).filter(Boolean),
       });
       setStatus({ type: "success", message: `Listed as ${farmer.name} - id ${farmer.id.slice(0, 8)}` });
@@ -96,8 +102,8 @@ export default function FarmerPage() {
               <input
                 required
                 type="tel"
-                value={form.phoneNumber}
-                onChange={(event) => setForm({ ...form, phoneNumber: event.target.value })}
+                value={form.phone}
+                onChange={(event) => setForm({ ...form, phone: event.target.value })}
                 className={inputCls}
                 placeholder="+919876543210"
               />
@@ -105,8 +111,8 @@ export default function FarmerPage() {
             <Field label="WhatsApp number (optional)">
               <input
                 type="tel"
-                value={form.whatsappNumber}
-                onChange={(event) => setForm({ ...form, whatsappNumber: event.target.value })}
+                value={form.whatsapp}
+                onChange={(event) => setForm({ ...form, whatsapp: event.target.value })}
                 className={inputCls}
                 placeholder="+919876543210"
               />

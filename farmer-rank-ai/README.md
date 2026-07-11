@@ -41,6 +41,10 @@ frontend/   Next.js + TypeScript + Tailwind — buyer / farmer / admin UI
 docker-compose.yml   Postgres + Qdrant + Redis + both apps, wired together
 ```
 
+## Listing storage and retrieval
+
+Farmer onboarding stores each structured listing in Postgres, the system of record. The same listing is indexed as an embedding in Qdrant for semantic search. Buyer queries retrieve matching IDs from Qdrant, then hydrate the current farmer details from Postgres before ranking.
+
 ## Judging-criteria map
 
 | Criterion | Where it lives |
