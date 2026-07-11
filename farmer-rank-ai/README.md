@@ -43,7 +43,9 @@ docker-compose.yml   Postgres + Qdrant + Redis + both apps, wired together
 
 ## Listing storage and retrieval
 
-Farmer onboarding stores each structured listing in Postgres, the system of record. The same listing is indexed as an embedding in Qdrant for semantic search. Buyer queries retrieve matching IDs from Qdrant, then hydrate the current farmer details from Postgres before ranking.
+Farmer onboarding stores each structured listing in Postgres, the system of record. The same listing is indexed as an embedding in Qdrant using `farmer.id` as the point ID. Buyer queries retrieve matching IDs from Qdrant, then hydrate the current farmer details from Postgres before ranking.
+
+Demo seed farmers use stable IDs, so repeated seed runs update the same six Postgres rows and Qdrant points without deleting onboarding-created listings. Reseeding restores the demo farmers' seeded delivery and feedback statistics.
 
 ## Judging-criteria map
 

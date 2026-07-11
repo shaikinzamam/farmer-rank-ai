@@ -15,8 +15,15 @@ export function authenticate(req: AuthedRequest, res: Response, next: NextFuncti
   const header = req.headers.authorization;
 
   if (!header) {
+    // Demo-only convenience, strictly gated behind NODE_ENV=development;
+    // production must always rely on verified JWT identity.
     if (env.nodeEnv === "development") {
-      req.user = { id: "demo-buyer", role: "buyer" };
+      const demoRole = (req.headers["x-demo-role"] as string) || "buyer";
+      const allowedDemoRoles = ["buyer", "farmer", "admin"] as const;
+      const role = allowedDemoRoles.includes(demoRole as any)
+        ? (demoRole as typeof allowedDemoRoles[number])
+        : "buyer";
+      req.user = { id: `demo-${role}`, role };
       return next();
     }
     res.status(401).json({ error: "Missing Authorization header" });

@@ -3,9 +3,17 @@ import { ensureCollections, farmerToEmbeddingText, upsertFarmerVector } from "..
 import { embedText } from "../llm/embeddings";
 import { FarmerProfile } from "../types";
 
-const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "createdAt" | "updatedAt">> = [
+const SEED_FARMER_IDS: Record<string, string> = {
+  "Ramesh Gowda": "11111111-1111-4111-8111-111111111111",
+  "Lakshmi Devi": "22222222-2222-4222-8222-222222222222",
+  "Suresh Patil": "33333333-3333-4333-8333-333333333333",
+  "Meena Kumari": "44444444-4444-4444-8444-444444444444",
+  "Anil Kumar": "55555555-5555-4555-8555-555555555555",
+  "Farmer Cooperative Mysuru": "66666666-6666-4666-8666-666666666666",
+};
+
+const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "id" | "createdAt" | "updatedAt">> = [
   {
-    id: "10000000-0000-4000-8000-000000000001",
     name: "Ramesh Gowda",
     cropName: "tomato",
     location: "Bengaluru Rural, Karnataka",
@@ -24,7 +32,6 @@ const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "createdAt" | "updatedAt">> = [
     onTimeDeliveries: 38,
   },
   {
-    id: "10000000-0000-4000-8000-000000000002",
     name: "Lakshmi Devi",
     cropName: "tomato",
     location: "Kolar, Karnataka",
@@ -43,7 +50,6 @@ const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "createdAt" | "updatedAt">> = [
     onTimeDeliveries: 22,
   },
   {
-    id: "10000000-0000-4000-8000-000000000003",
     name: "Suresh Patil",
     cropName: "tomato",
     location: "Chikkaballapur, Karnataka",
@@ -62,7 +68,6 @@ const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "createdAt" | "updatedAt">> = [
     onTimeDeliveries: 8,
   },
   {
-    id: "10000000-0000-4000-8000-000000000004",
     name: "Meena Kumari",
     cropName: "onion",
     location: "Bengaluru Rural, Karnataka",
@@ -81,7 +86,6 @@ const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "createdAt" | "updatedAt">> = [
     onTimeDeliveries: 27,
   },
   {
-    id: "10000000-0000-4000-8000-000000000005",
     name: "Anil Kumar",
     cropName: "tomato",
     location: "Hosur, Tamil Nadu",
@@ -100,7 +104,6 @@ const SAMPLE_FARMERS: Array<Omit<FarmerProfile, "createdAt" | "updatedAt">> = [
     onTimeDeliveries: 54,
   },
   {
-    id: "10000000-0000-4000-8000-000000000006",
     name: "Farmer Cooperative Mysuru",
     cropName: "mango",
     location: "Mysuru, Karnataka",
@@ -127,8 +130,10 @@ async function main() {
 
   console.log(`Seeding ${SAMPLE_FARMERS.length} sample farmers...`);
   for (const sample of SAMPLE_FARMERS) {
+    const id = SEED_FARMER_IDS[sample.name];
+    if (!id) throw new Error(`Missing stable seed ID for ${sample.name}`);
     const now = new Date().toISOString();
-    const farmer: FarmerProfile = { ...sample, createdAt: now, updatedAt: now };
+    const farmer: FarmerProfile = { ...sample, id, createdAt: now, updatedAt: now };
     await insertFarmer(farmer);
     const vector = await embedText(farmerToEmbeddingText(farmer));
     await upsertFarmerVector(farmer, vector);

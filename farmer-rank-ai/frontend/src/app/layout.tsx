@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Link from "next/link";
+import { DemoNav } from "@/components/DemoNav";
 
 export const metadata: Metadata = {
   title: "Farmer Rank AI",
@@ -16,17 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="font-display text-2xl tracking-tight text-paper">
               Farmer Rank <span className="text-ledger">AI</span>
             </Link>
-            <nav className="flex items-center gap-2 text-xs sm:text-sm text-mute font-mono">
-              <Link href="/buyer" className="rounded-full border border-white/10 px-3 py-1.5 hover:border-ledger/50 hover:text-paper transition-colors">
-                buyer
-              </Link>
-              <Link href="/farmer" className="rounded-full border border-white/10 px-3 py-1.5 hover:border-ledger/50 hover:text-paper transition-colors">
-                farmer
-              </Link>
-              <Link href="/admin" className="rounded-full border border-white/10 px-3 py-1.5 hover:border-ledger/50 hover:text-paper transition-colors">
-                admin
-              </Link>
-            </nav>
+            <DemoNav />
           </div>
         </header>
         <main className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 py-8 sm:py-12">{children}</main>

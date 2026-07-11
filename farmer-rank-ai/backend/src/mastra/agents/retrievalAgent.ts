@@ -17,6 +17,28 @@ export const retrievalAgent = new Agent({
   model: getModel(),
 });
 
+function listingIdentity(candidate: RetrievedCandidate): string {
+  const farmer = candidate.farmer;
+  return [farmer.name, farmer.cropName, farmer.location, farmer.pricePerKg]
+    .map((value) => String(value).trim().toLowerCase())
+    .join("|");
+}
+
+/** Keeps the strongest match while rejecting duplicate IDs and equivalent listings. */
+export function dedupeCandidates(candidates: RetrievedCandidate[]): RetrievedCandidate[] {
+  const strongestFirst = [...candidates].sort((a, b) => b.similarityScore - a.similarityScore);
+  const seenIds = new Set<string>();
+  const seenListings = new Set<string>();
+  return strongestFirst.filter((candidate) => {
+    const id = candidate.farmer.id;
+    const identity = listingIdentity(candidate);
+    if (seenIds.has(id) || seenListings.has(identity)) return false;
+    seenIds.add(id);
+    seenListings.add(identity);
+    return true;
+  });
+}
+
 /**
  * Retrieval step: "Think -> Retrieve".
  * Embeds the buyer's intent, runs a Qdrant vector search (with an optional
@@ -59,20 +81,12 @@ export async function runRetrievalAgent(intent: ParsedIntent, limit = 20): Promi
   }
 
   const candidates: RetrievedCandidate[] = [];
-  const seenIds = new Set<string>();
-  const seenListings = new Set<string>();
   for (const hit of hits) {
     const farmerId = String(hit.id);
     const farmer = await getFarmerById(farmerId);
     if (farmer) {
-      const listingKey = [farmer.name, farmer.cropName, farmer.location, farmer.pricePerKg]
-        .map((value) => String(value).trim().toLowerCase())
-        .join("|");
-      if (seenIds.has(farmer.id) || seenListings.has(listingKey)) continue;
-      seenIds.add(farmer.id);
-      seenListings.add(listingKey);
       candidates.push({ farmer, similarityScore: hit.score });
     }
   }
-  return candidates;
+  return dedupeCandidates(candidates);
 }

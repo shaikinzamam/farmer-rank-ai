@@ -60,10 +60,22 @@ export interface QueryPipelineResult {
 
 const BASE = "/api/backend";
 
+export type DemoRole = "buyer" | "farmer" | "admin";
+
+export function getDemoRole(): DemoRole {
+  if (typeof window === "undefined") return "buyer";
+  const role = localStorage.getItem("demoRole");
+  return role === "farmer" || role === "admin" ? role : "buyer";
+}
+
+export function setDemoRole(role: DemoRole): void {
+  if (typeof window !== "undefined") localStorage.setItem("demoRole", role);
+}
+
 export async function submitQuery(query: string): Promise<QueryPipelineResult> {
   const res = await fetch(`${BASE}/query`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-demo-role": getDemoRole() },
     body: JSON.stringify({ query }),
   });
   if (!res.ok) {
@@ -89,7 +101,7 @@ export interface FarmerProfileInput {
 export async function createFarmerProfile(input: FarmerProfileInput): Promise<{ farmer: FarmerProfile }> {
   const res = await fetch(`${BASE}/farmer/profile`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-demo-role": getDemoRole() },
     body: JSON.stringify(input),
   });
   if (!res.ok) {
@@ -115,7 +127,9 @@ export interface AuditLogEntry {
 }
 
 export async function fetchAuditLogs(limit = 50): Promise<{ logs: AuditLogEntry[] }> {
-  const res = await fetch(`${BASE}/admin/audit?limit=${limit}`);
+  const res = await fetch(`${BASE}/admin/audit?limit=${limit}`, {
+    headers: { "x-demo-role": getDemoRole() },
+  });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     if (res.status === 403) {

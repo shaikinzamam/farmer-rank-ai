@@ -5,6 +5,7 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const response = await fetch(`${BACKEND_URL}/admin/audit?${url.searchParams.toString()}`, {
+      headers: { "x-demo-role": request.headers.get("x-demo-role") || "buyer" },
       cache: "no-store",
     });
     const text = await response.text();

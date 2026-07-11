@@ -5,7 +5,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const response = await fetch(`${BACKEND_URL}/farmer/profile`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-demo-role": request.headers.get("x-demo-role") || "buyer",
+      },
       body: JSON.stringify(body),
       cache: "no-store",
     });

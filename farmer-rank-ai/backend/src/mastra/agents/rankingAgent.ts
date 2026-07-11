@@ -1,6 +1,7 @@
 import { Agent } from "@mastra/core/agent";
 import { getModel } from "../model";
 import { ParsedIntent, RankedFarmer, RetrievedCandidate, ScoreBreakdown } from "../../types";
+import { dedupeCandidates } from "./retrievalAgent";
 
 const INSTRUCTIONS = `You are the Ranking Agent for Farmer Rank AI. You apply a fixed, auditable
 weighted scoring formula (never invent your own weights):
@@ -104,17 +105,9 @@ export async function runRankingAgent(
   intent: ParsedIntent,
   memoryBoostFarmerIds: string[] = []
 ): Promise<RankedFarmer[]> {
+  candidates = dedupeCandidates(candidates);
   const memoryBoostSet = new Set(memoryBoostFarmerIds);
-  const uniqueCandidates = Array.from(
-    new Map(candidates.map((candidate) => {
-      const farmer = candidate.farmer;
-      const key = [farmer.name, farmer.cropName, farmer.location, farmer.pricePerKg]
-        .map((value) => String(value).trim().toLowerCase())
-        .join("|");
-      return [key, candidate] as const;
-    })).values()
-  );
-  const scored = uniqueCandidates.map((c) => ({
+  const scored = candidates.map((c) => ({
     farmer: c.farmer,
     scoreBreakdown: applyMemoryBoost(computeScoreBreakdown(c, intent), memoryBoostSet.has(c.farmer.id)),
   }));

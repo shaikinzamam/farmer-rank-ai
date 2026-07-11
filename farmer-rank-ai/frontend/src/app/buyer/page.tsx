@@ -19,7 +19,7 @@ export default function BuyerPage() {
   const uniqueRankedFarmers = result
     ? Array.from(new Map(result.rankedFarmers.map((item) => {
         const farmer = item.farmer;
-        const key = farmer.id || `${farmer.name}-${farmer.cropName}-${farmer.location}`;
+        const key = farmer.id || `${farmer.name}-${farmer.cropName}-${farmer.location}-${farmer.pricePerKg}`;
         return [key, item] as const;
       })).values()).slice(0, 5)
     : [];
