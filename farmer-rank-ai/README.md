@@ -96,6 +96,14 @@ echo "BACKEND_URL=http://localhost:4000" > .env.local
 npm run dev              # http://localhost:3000
 ```
 
+For Supabase or another hosted Postgres provider:
+
+- Use the Direct connection string.
+- Add `?sslmode=require` if it is not already included.
+- The backend enables SSL automatically for non-local database URLs.
+- Do not commit a real `DATABASE_URL`.
+- If credentials were exposed, rotate the database password.
+
 ### Running with no external services at all
 
 The backend is deliberately built to **degrade gracefully**:

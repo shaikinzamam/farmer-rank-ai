@@ -2,7 +2,26 @@ import { Pool } from "pg";
 import { env } from "../config/env";
 import { AuditLogEntry, FarmerProfile, FeedbackEvent } from "../types";
 
-export const pool = new Pool({ connectionString: env.databaseUrl });
+const isLocalDatabase =
+  env.databaseUrl.includes("localhost") ||
+  env.databaseUrl.includes("127.0.0.1") ||
+  env.databaseUrl.includes("postgres:5432");
+
+// pg-connection-string lets SSL query parameters override Pool.ssl. Strip
+// them so the environment-aware configuration below remains authoritative.
+const databaseUrl = new URL(env.databaseUrl);
+for (const parameter of ["sslmode", "sslcert", "sslkey", "sslrootcert", "uselibpqcompat"]) {
+  databaseUrl.searchParams.delete(parameter);
+}
+
+export const pool = new Pool({
+  connectionString: databaseUrl.toString(),
+  ssl: isLocalDatabase
+    ? false
+    : {
+        rejectUnauthorized: false,
+      },
+});
 
 export async function initSchema(): Promise<void> {
   await pool.query(`
