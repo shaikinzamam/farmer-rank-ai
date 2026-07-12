@@ -26,7 +26,13 @@ queryRouter.post("/query", async (req: AuthedRequest, res) => {
       // Authenticated buyers are the currently supported "contact unlocked" state.
       contactUnlocked: req.user?.role === "buyer",
     } });
-    if (execution.status !== "success") throw new Error(`Query workflow ended with status ${execution.status}`);
+    if (execution.status !== "success") {
+      console.error("[POST /query] workflow execution failed:", execution);
+      const workflowError = "error" in execution && execution.error
+        ? execution.error instanceof Error ? execution.error.message : String(execution.error)
+        : `Query workflow ended with status ${execution.status}`;
+      throw new Error(workflowError);
+    }
     return res.status(200).json(execution.result);
   } catch (err) {
     console.error("[POST /query] pipeline error:", err);
