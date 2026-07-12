@@ -58,6 +58,25 @@ async function callOpenAiFallback(messages: ChatMessage[], jsonMode: boolean): P
   return res.data.choices[0].message.content as string;
 }
 
+const FEATHERLESS_COOLDOWN_MS = 60_000;
+let featherlessCooldownUntil = 0;
+let featherlessCooldownLogged = false;
+
+function shouldCoolDownFeatherless(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) return false;
+  return error.response?.status === 429 || error.code === "ECONNABORTED";
+}
+
+async function useFallback(
+  messages: ChatMessage[],
+  jsonMode: boolean,
+  mockResponder?: (messages: ChatMessage[]) => string
+): Promise<string> {
+  if (env.openai.apiKey) return callOpenAiFallback(messages, jsonMode);
+  if (mockResponder) return mockResponder(messages);
+  throw new Error("No LLM fallback is configured.");
+}
+
 // Circuit breaker protects against Grok downtime per the PRD's NFR ("circuit
 // breakers for external LLM and Safety APIs"). On repeated failure it opens
 // and requests go straight to the fallback provider without waiting to time out.
@@ -81,17 +100,24 @@ export async function chatComplete(messages: ChatMessage[], opts: { jsonMode?: b
   }
 
   if (env.llmProvider === "featherless" && env.featherless.apiKey) {
+    if (Date.now() < featherlessCooldownUntil) {
+      if (!featherlessCooldownLogged) {
+        console.warn("[llm] Featherless cooldown active; using fallback");
+        featherlessCooldownLogged = true;
+      }
+      return useFallback(messages, !!opts.jsonMode, opts.mockResponder);
+    }
     try {
-      return await callFeatherless(messages, !!opts.jsonMode);
+      const result = await callFeatherless(messages, !!opts.jsonMode);
+      featherlessCooldownLogged = false;
+      return result;
     } catch (err) {
       console.warn("[llm] Featherless failed; using fallback:", err instanceof Error ? err.message : err);
-      if (env.openai.apiKey) {
-        return callOpenAiFallback(messages, !!opts.jsonMode);
+      if (shouldCoolDownFeatherless(err)) {
+        featherlessCooldownUntil = Date.now() + FEATHERLESS_COOLDOWN_MS;
+        featherlessCooldownLogged = false;
       }
-      if (opts.mockResponder) {
-        return opts.mockResponder(messages);
-      }
-      throw err;
+      return useFallback(messages, !!opts.jsonMode, opts.mockResponder);
     }
   } else if (env.grok.apiKey) {
     return grokBreaker.fire(messages, !!opts.jsonMode) as Promise<string>;

@@ -80,7 +80,19 @@ export async function runIntentAgent(rawQuery: string): Promise<ParsedIntent> {
 function mockParseIntent(query: string): string {
   const q = query.toLowerCase();
 
-  const cropMatch = q.match(/\b(tomato|onion|potato|wheat|rice|mango|banana|cotton|sugarcane|maize|chilli|grapes)\w*/);
+  const cropAliases: Record<string, string> = {
+    tomato: "tomato", tomatoes: "tomato", onion: "onion", onions: "onion",
+    potato: "potato", potatoes: "potato", rice: "rice", wheat: "wheat",
+    maize: "maize", corn: "maize", mango: "mango", mangoes: "mango",
+    banana: "banana", bananas: "banana", apple: "apple", apples: "apple",
+    chilli: "chilli", chili: "chilli", chilies: "chilli", cotton: "cotton",
+    sugarcane: "sugarcane", soybean: "soybean", groundnut: "groundnut",
+    peanut: "groundnut", peanuts: "groundnut", turmeric: "turmeric", ginger: "ginger",
+    garlic: "garlic", brinjal: "brinjal", eggplant: "brinjal", cabbage: "cabbage",
+    cauliflower: "cauliflower", carrot: "carrot", beans: "beans", peas: "peas",
+    cucumber: "cucumber",
+  };
+  const cropMatch = q.match(new RegExp(`\\b(${Object.keys(cropAliases).join("|")})\\b`));
   const qtyMatch = q.match(/(\d+(?:\.\d+)?)\s*(kg|kilogram|quintal|tonne|ton)/);
   const priceMatch = q.match(/(?:₹|rs\.?\s*)(\d+(?:\.\d+)?)/);
   const gradeMatch = q.match(/grade\s*([abc])/i);
@@ -94,7 +106,7 @@ function mockParseIntent(query: string): string {
   }
 
   const result = {
-    cropName: cropMatch ? cropMatch[1] : "unspecified",
+    cropName: cropMatch ? cropAliases[cropMatch[1]] : "unspecified",
     quantityKg,
     maxPricePerKg: priceMatch ? parseFloat(priceMatch[1]) : null,
     location: locationMatch ? locationMatch[1].trim() : null,

@@ -15,38 +15,83 @@ export const qdrant = new QdrantClient({
  *  - interaction_memory: one vector per past successful query/match, so the Memory Agent can
  *    recall similar historical buyer intents and bias ranking towards proven matches ("Remember").
  */
-export async function ensureCollections(): Promise<void> {
-  const collections = await qdrant.getCollections();
-  const existing = new Set(collections.collections.map((c) => c.name));
 
-  if (!existing.has(env.qdrant.collectionFarmers)) {
-    await qdrant.createCollection(env.qdrant.collectionFarmers, {
-      vectors: { size: env.qdrant.embeddingDim, distance: "Cosine" },
-    });
-  }
-  await ensurePayloadIndex("cropName", "keyword");
-  await ensurePayloadIndex("qualityGrade", "keyword");
-  await ensurePayloadIndex("pricePerKg", "float");
+function isAlreadyExistsError(err: unknown): boolean {
+  const error = err as {
+    status?: number;
+    statusText?: string;
+    message?: string;
+    data?: unknown;
+  };
 
-  if (!existing.has(env.qdrant.collectionMemory)) {
-    await qdrant.createCollection(env.qdrant.collectionMemory, {
-      vectors: { size: env.qdrant.embeddingDim, distance: "Cosine" },
-    });
+  const text = JSON.stringify({
+    status: error.status,
+    statusText: error.statusText,
+    message: error.message,
+    data: error.data,
+  }).toLowerCase();
+
+  return (
+    error.status === 409 ||
+    text.includes("already exists") ||
+    text.includes("conflict") ||
+    text.includes("index already exists")
+  );
+}
+
+async function collectionExists(collectionName: string): Promise<boolean> {
+  try {
+    await qdrant.getCollection(collectionName);
+    return true;
+  } catch {
+    return false;
   }
 }
 
-async function ensurePayloadIndex(fieldName: string, fieldSchema: "keyword" | "float"): Promise<void> {
+async function createCollectionIfMissing(collectionName: string): Promise<void> {
+  if (await collectionExists(collectionName)) {
+    return;
+  }
+
+  try {
+    await qdrant.createCollection(collectionName, {
+      vectors: {
+        size: env.qdrant.embeddingDim,
+        distance: "Cosine",
+      },
+    });
+  } catch (err) {
+    if (!isAlreadyExistsError(err)) {
+      throw err;
+    }
+  }
+}
+
+async function ensurePayloadIndex(
+  fieldName: string,
+  fieldSchema: "keyword" | "float"
+): Promise<void> {
   try {
     await qdrant.createPayloadIndex(env.qdrant.collectionFarmers, {
       field_name: fieldName,
       field_schema: fieldSchema,
     });
   } catch (err) {
-    const message = (err as Error).message.toLowerCase();
-    if (!message.includes("already exists")) {
+    if (!isAlreadyExistsError(err)) {
       throw err;
     }
   }
+}
+
+export async function ensureCollections(): Promise<void> {
+  await createCollectionIfMissing(env.qdrant.collectionFarmers);
+  await createCollectionIfMissing(env.qdrant.collectionMemory);
+
+  await ensurePayloadIndex("cropName", "keyword");
+  await ensurePayloadIndex("qualityGrade", "keyword");
+  await ensurePayloadIndex("pricePerKg", "float");
+
+  console.log("[qdrant] collections ready");
 }
 
 export function farmerToEmbeddingText(farmer: Partial<FarmerProfile>): string {
@@ -54,14 +99,19 @@ export function farmerToEmbeddingText(farmer: Partial<FarmerProfile>): string {
     farmer.cropName,
     `grade ${farmer.qualityGrade}`,
     `location ${farmer.location}`,
-    farmer.certifications?.length ? `certified ${farmer.certifications.join(", ")}` : "",
+    farmer.certifications?.length
+      ? `certified ${farmer.certifications.join(", ")}`
+      : "",
     `price ${farmer.pricePerKg} per kg`,
   ]
     .filter(Boolean)
     .join(". ");
 }
 
-export async function upsertFarmerVector(farmer: FarmerProfile, vector: number[]): Promise<void> {
+export async function upsertFarmerVector(
+  farmer: FarmerProfile,
+  vector: number[]
+): Promise<void> {
   await qdrant.upsert(env.qdrant.collectionFarmers, {
     wait: true,
     points: [
@@ -91,11 +141,14 @@ export async function searchFarmers(
     filter: filter as any,
     with_payload: true,
   });
+
   return result as QdrantSearchHit[];
 }
 
-/** Store a successful (query -> chosen farmer) interaction so future similar
- * queries can be biased towards proven matches. This is the "Memory" agent's backing store. */
+/**
+ * Store a successful query -> chosen farmer interaction so future similar
+ * queries can be biased towards proven matches. This is the Memory Agent's backing store.
+ */
 export async function storeInteractionMemory(params: {
   queryText: string;
   vector: number[];
@@ -121,11 +174,15 @@ export async function storeInteractionMemory(params: {
   });
 }
 
-export async function recallSimilarInteractions(vector: number[], limit = 5): Promise<QdrantSearchHit[]> {
+export async function recallSimilarInteractions(
+  vector: number[],
+  limit = 5
+): Promise<QdrantSearchHit[]> {
   const result = await qdrant.search(env.qdrant.collectionMemory, {
     vector,
     limit,
     with_payload: true,
   });
+
   return result as QdrantSearchHit[];
 }

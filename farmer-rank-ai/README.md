@@ -169,3 +169,12 @@ convincingly, not to be production-hardened. Explicitly stubbed:
 - **Langfuse/OTel observability**: not wired in this scaffold; the audit_log
   Postgres table plus per-request `traceId` gives you the same request-level
   traceability for the demo.
+
+## Known Limitations
+
+- The local demo safety guardrail is keyword/rule based when an Enkrypt API key is not configured.
+- Featherless and other OpenAI-compatible models may not reliably support forced tool-calling, so the project uses JSON prompting and fallback parsing.
+- Admin audit is role-protected. The demo identity defaults to buyer; clicking the Admin navigation link selects the development-only admin identity.
+- Location scoring is approximate unless real geodistance is enabled.
+- Pipeline progress is a UI visualization, not a real-time stream of backend step events unless SSE is enabled.
+- Redis is included for future distributed cache/session expansion; the current demo cache is process-local and in memory.

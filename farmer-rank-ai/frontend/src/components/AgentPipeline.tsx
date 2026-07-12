@@ -48,12 +48,13 @@ export function AgentPipeline({ active, done }: { active: boolean; done: boolean
     <div className="glass-panel rounded-[28px] p-5 soft-glow">
       <div className="mb-5 flex items-center justify-between gap-4">
         <p className="font-mono text-xs uppercase tracking-[0.25em] text-wheatSoft">
-          {done ? "pipeline complete" : "running agent pipeline"}
+          {done ? "pipeline complete" : "estimated pipeline progress"}
         </p>
         <span className="rounded-full border border-ledger/25 bg-ledger/10 px-3 py-1 text-xs font-mono text-ledger">
-          {done ? "ready" : "live"}
+          {done ? "ready" : "demo"}
         </span>
       </div>
+      {!done && <p className="mt-3 text-xs text-mute">Progress is a UI visualization while the backend workflow runs.</p>}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
         {PIPELINE_STAGES.map((stage, index) => {
           const isComplete = done || index < currentIndex;
